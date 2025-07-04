@@ -1,9 +1,44 @@
 import { useSelector } from 'react-redux';
+import { BASE_URL } from '../../config/api';
+import { useNavigate } from 'react-router-dom';
 
-export default function PreviewWish({ onBack, onSubmit }) {
+export default function PreviewWish({ onBack }) {
+  const navigate = useNavigate();
+
   const { wishType, themeId, recipients, images, gifts, quotes } = useSelector(
     (state) => state.wishForm
   );
+
+  const handleSubmit = async () => {
+    const formData = new FormData();
+    formData.append('wishType', wishType);
+    formData.append('themeId', themeId);
+    formData.append('recipients', JSON.stringify(recipients.details));
+    formData.append('gifts', JSON.stringify(gifts));
+    formData.append('quotes', JSON.stringify(quotes));
+    images.forEach((file) => {
+      formData.append('images', file);
+    });
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/wishes`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        navigate(`/wish/${data.wishId}`); // ✅ Step 3: Navigate
+      } else {
+        alert('❌ Submission failed: ' + data.message);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('❌ Server error.');
+    }
+  };
+
+
 
   return (
     <div className="space-y-6">
@@ -86,7 +121,7 @@ export default function PreviewWish({ onBack, onSubmit }) {
         </button>
         <button
           type="button"
-          onClick={onSubmit}
+          onClick={handleSubmit}
           className="px-6 py-2 bg-green-500 text-white rounded hover:bg-green-600"
         >
           ✅ Confirm & Submit
